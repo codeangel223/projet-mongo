@@ -3,25 +3,34 @@ services:
   config1:
     image: mongo
     container_name: config1
-    command: mongod --configsvr --replSet config-server-replset --port 27017
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --configsvr --port 27017 --replSet config-server-replset
     volumes:
+      # - ./configsvr/config1:/data/db
       - config1-data:/data/db
+      - ./config/configsvr.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
   config2:
     image: mongo
     container_name: config2
-    command: mongod --configsvr --replSet config-server-replset --port 27017
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --configsvr --port 27017 --replSet config-server-replset
     volumes:
+      # - ./configsvr/config2:/data/db
       - config2-data:/data/db
+      - ./config/configsvr.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
   config3:
     image: mongo
     container_name: config3
-    command: mongod --configsvr --replSet config-server-replset --port 27017
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --configsvr --port 27017 --replSet config-server-replset
     volumes:
+      # - ./configsvr/config3:/data/db
       - config3-data:/data/db
+      - ./config/configsvr.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
 
@@ -29,25 +38,34 @@ services:
   shard1-1:
     image: mongo
     container_name: shard1-1
-    command: mongod --shardsvr --replSet shard1 --port 27018
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --shardsvr --port 27018 --replSet shard1
     volumes:
+      # - ./shard1/shard1-1:/data/db
       - shard1-1-data:/data/db
+      - ./config/shard1.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
   shard1-2:
     image: mongo
     container_name: shard1-2
-    command: mongod --shardsvr --replSet shard1 --port 27018
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --shardsvr --port 27018 --replSet shard1
     volumes:
+      # - ./shard1/shard1-2:/data/db
       - shard1-2-data:/data/db
+      - ./config/shard1.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
   shard1-3:
     image: mongo
     container_name: shard1-3
-    command: mongod --shardsvr --replSet shard1 --port 27018
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --shardsvr --port 27018 --replSet shard1
     volumes:
+      # - ./shard1/shard1-3:/data/db
       - shard1-3-data:/data/db
+      - ./config/shard1.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
 
@@ -55,25 +73,34 @@ services:
   shard2-1:
     image: mongo
     container_name: shard2-1
-    command: mongod --shardsvr --replSet shard2 --port 27018
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --shardsvr --port 27018 --replSet shard2
     volumes:
+      # - ./shard2/shard2-1:/data/db
       - shard2-1-data:/data/db
+      - ./config/shard2.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
   shard2-2:
     image: mongo
     container_name: shard2-2
-    command: mongod --shardsvr --replSet shard2 --port 27018
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --shardsvr --port 27018 --replSet shard2
     volumes:
+      # - ./shard2/shard2-2:/data/db
       - shard2-2-data:/data/db
+      - ./config/shard2.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
   shard2-3:
     image: mongo
     container_name: shard2-3
-    command: mongod --shardsvr --replSet shard2 --port 27018
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --shardsvr --port 27018 --replSet shard2
     volumes:
+      # - ./shard2/shard2-3:/data/db
       - shard2-3-data:/data/db
+      - ./config/shard2.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
 
@@ -81,25 +108,33 @@ services:
   shard3-1:
     image: mongo
     container_name: shard3-1
-    command: mongod --shardsvr --replSet shard3 --port 27018
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --shardsvr --port 27018 --replSet shard3
     volumes:
-      - shard3-1-data:/data/db
+      # - ./shard3/shard3-1:/data/db
+      - ./config/shard3.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
   shard3-2:
     image: mongo
     container_name: shard3-2
-    command: mongod --shardsvr --replSet shard3 --port 27018
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --shardsvr --port 27018 --replSet shard3
     volumes:
+      # - ./shard3/shard3-2:/data/db
       - shard3-2-data:/data/db
+      - ./config/shard3.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
   shard3-3:
     image: mongo
     container_name: shard3-3
-    command: mongod --shardsvr --replSet shard3 --port 27018
+    command: mongod --config /etc/mongod.yml
+    # command: mongod --shardsvr --port 27018 --replSet shard3
     volumes:
+      # - ./shard3/shard3-3:/data/db
       - shard3-3-data:/data/db
+      - ./config/shard3.yml:/etc/mongod.yml
     networks:
       - mongo-cluster
 
@@ -107,14 +142,19 @@ services:
   mongos:
     image: mongo
     container_name: projet-mongos
+    volumes:
+      # - ./mongos:/data/db
+      - ./config/mongos.yml:/etc/mongod.yml
+      - mongos-router:/data/db
     depends_on:
       - config1
       - config2
       - config3
-    command: >
-      mongos --configdb config-server-replset/config1:27017,config2:27017,config3:27017 --port 27017
+    # command: >
+    #   mongos --configdb config-server-replset/config1:27017,config2:27017,config3:27017 --port 27017
+    command: mongos --config /etc/mongod.yml
     ports:
-      - "27017:27017"
+      - 27017:27017
     networks:
       - mongo-cluster
 
@@ -122,7 +162,10 @@ networks:
   mongo-cluster:
     driver: bridge
 
+# volumes:
+
 volumes:
+  mongos-router:
   config1-data:
   config2-data:
   config3-data:

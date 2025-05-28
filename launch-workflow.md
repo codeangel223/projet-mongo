@@ -1,8 +1,15 @@
+# Create volumes
+
+bash```
+mkdir -p configsvr shard1/shard1-{1,2,3} shard2/shard2-{1,2,3} shard3/shard3-{1,2,3}
+
+````
+
 # 1. Lancer tous les conteneurs
 
 ```bash
 docker compose up -d
-```
+````
 
 # 2. Initialiser le replicaSet config server
 
