@@ -6,4 +6,5 @@ shard3/
 configsvr/
 mongos/
 *.json
+*.doc
 # config/

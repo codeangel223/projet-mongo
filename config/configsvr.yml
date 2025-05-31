@@ -10,3 +10,7 @@ replication:
 
 sharding:
   clusterRole: configsvr
+
+security:
+  authorization: "enabled"
+  keyFile: data/db/keyFile

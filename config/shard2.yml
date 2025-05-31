@@ -9,3 +9,13 @@ replication:
   replSetName: shard2
 sharding:
   clusterRole: shardsvr
+
+
+# Active Auth
+
+
+security:
+  authorization: "enabled"
+  keyFile: data/db/keyFile
+
+
