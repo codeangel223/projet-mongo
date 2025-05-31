@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture Sharded MongoDB - Projet Pikine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .presentation-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .slide {
+            display: none;
+            padding: 60px;
+            min-height: 700px;
+            position: relative;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        .slide h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-align: center;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+        }
+
+        .slide h2 {
+            color: #34495e;
+            font-size: 2em;
+            margin: 25px 0 15px 0;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+        }
+
+        .slide h3 {
+            color: #2980b9;
+            font-size: 1.4em;
+            margin: 20px 0 10px 0;
+        }
+
+        .slide p, .slide li {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: #34495e;
+        }
+
+        .slide ul {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        .slide li {
+            margin-bottom: 10px;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #27ae60;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .navigation {
+            background: #2c3e50;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .nav-button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .nav-button:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .slide-counter {
+            color: white;
+            font-size: 1.1em;
+        }
+
+        .architecture-diagram {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .component {
+            background: linear-gradient(145deg, #f39c12, #e67e22);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 10px;
+            min-width: 150px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .arrow {
+            font-size: 2em;
+            color: #3498db;
+            margin: 0 10px;
+        }
+
+        .title-slide {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .title-slide h1 {
+            font-size: 3em;
+            border: none;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .title-slide p {
+            font-size: 1.3em;
+            margin-top: 20px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            display: block;
+        }
+
+        .mongodb-green {
+            color: #00684A;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <!-- Slide 1: Title -->
+        <div class="slide active title-slide">
+            <h1>Architecture Sharded avec <span class="mongodb-green">MongoDB</span></h1>
+            <p>Implémentation pour la Gestion des Déchets - Ville de Pikine</p>
+            <p style="font-size: 1.1em; margin-top: 40px;">Rapport de Projet - Base de Données No Sql</p>
+        </div>
+
+        <!-- Slide 2: Introduction -->
+        <div class="slide">
+            <h1>Introduction</h1>
+            <div class="highlight">
+                <h3>Contexte</h3>
+                <p><strong>MongoDB</strong> est une base de données NoSQL orientée documents, reconnue pour sa flexibilité, sa scalabilité et ses performances exceptionnelles.</p>
+            </div>
+            
+            <h2>Problématique</h2>
+            <ul>
+                <li>Croissance exponentielle des données générées</li>
+                <li>Insuffisance des bases de données classiques</li>
+                <li>Besoin de rapidité, fiabilité et scalabilité</li>
+            </ul>
+
+            <h2>Solution</h2>
+            <p>L'architecture <strong>sharded MongoDB</strong> représente une solution efficace pour :</p>
+            <ul>
+                <li>Répartir la charge sur plusieurs serveurs</li>
+                <li>Améliorer les performances des requêtes</li>
+                <li>Gérer des volumes de données massifs</li>
+            </ul>
+        </div>
+
+        <!-- Slide 3: Use Case Pikine -->
+        <div class="slide">
+            <h1>Use Case : Suivi des Déchets - Pikine</h1>
+            
+            <h2>Problématique Métier</h2>
+            <div class="highlight">
+                <p>La ville de Pikine collecte quotidiennement des déchets à travers plusieurs marchés. Ces données sont :</p>
+                <ul>
+                    <li>Datées et géolocalisées</li>
+                    <li>Associées à des camions spécifiques</li>
+                    <li>Catégorisées par types de déchets</li>
+                    <li>Volumineuses (plusieurs milliers d'entrées/an)</li>
+                </ul>
+            </div>
+
+            <h2>Objectifs du Projet</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">📊</span>
+                    <p>Stocker efficacement les données volumineuses</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">⚖️</span>
+                    <p>Répartir dynamiquement la charge</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">🔍</span>
+                    <p>Interroger rapidement par critères multiples</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Architecture Sharding -->
+        <div class="slide">
+            <h1>Architecture du Sharding</h1>
+            
+            <div class="architecture-diagram">
+                <div class="component">
+                    <h3>Shards</h3>
+                    <p>Serveurs contenant des sous-ensembles de données</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="component">
+                    <h3>Config Servers</h3>
+                    <p>Stockent les métadonnées du cluster</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="component">
+                    <h3>Routers (mongos)</h3>
+                    <p>Redirigent les requêtes vers les shards appropriés</p>
+                </div>
+            </div>
+
+            <h2>Étapes clés de configuration</h2>
+            <ul>
+                <li><strong>Configuration des composants</strong> : Shards, Config Servers, Routers</li>
+                <li><strong>Choix de la clé de sharding</strong> : Sélection d'une clé (ex: _id) pour partitionner équitablement</li>
+                <li><strong>Activation du sharding</strong> : Sur les bases de données cibles</li>
+            </ul>
+        </div>
+
+        <!-- Slide 5: Implementation -->
+        <div class="slide">
+            <h1>Mise en Place du Sharding</h1>
+            
+            <h2>Activation du Sharding</h2>
+            <div class="code-block">
+sh.enableSharding("collectDechet")
+            </div>
+            
+            <h2>Structure du Cluster</h2>
+            <ul>
+                <li><strong>Base principale</strong> : collectDechet (shard primaire : shard2)</li>
+                <li><strong>Base de configuration</strong> : config (métadonnées du cluster)</li>
+                <li><strong>Collections shardées</strong> : collectDechet.tonnages</li>
+            </ul>
+
+            <h2>Répartition des Données</h2>
+            <div class="architecture-diagram">
+                <div class="component">
+                    <h3>Shard1</h3>
+                    <p>config.system.sessions</p>
+                </div>
+                <div class="component">
+                    <h3>Shard2</h3>
+                    <p>collectDechet (primaire)<br>tonnages</p>
+                </div>
+            </div>
+
+            <div class="highlight">
+                <p><strong>Clé de sharding</strong> : L'identifiant _id assure une répartition équilibrée</p>
+            </div>
+        </div>
+
+        <!-- Slide 6: Docker Structure -->
+        <div class="slide">
+            <h1>Structure Dockerisée du Projet</h1>
+            
+            <div class="highlight">
+                <p>Le projet est entièrement <strong>dockerisé</strong> pour faciliter le déploiement et la reproduction dans différents environnements.</p>
+            </div>
+
+            <div class="code-block">
+PROJET-MONGO/
+│
+├── config/              # Configurations Docker Compose
+│   ├── configsvr.yml
+│   ├── mongos.yml
+│   ├── shard1.yml
+│   ├── shard2.yml
+│   └── shard3.yml
+│
+├── scripts/             # Scripts d'automatisation
+│   ├── add-shards.js
+│   ├── init-config-server.js
+│   └── init-shard*.js
+│
+├── docker-compose.yml   # Composition principale
+├── commands.sh          # Lancement global
+└── requettes.md         # Requêtes métiers
+            </div>
+
+            <h2>Avantages de cette approche</h2>
+            <ul>
+                <li>Démarrage automatisé du cluster sharded</li>
+                <li>Isolation des composants dans des conteneurs</li>
+                <li>Déploiement local ou distant sans configuration complexe</li>
+                <li>Projet public sur GitHub pour réutilisation</li>
+            </ul>
+        </div>
+
+        <!-- Slide 7: Indexation Comparison -->
+        <div class="slide">
+            <h1>Comparaison : Avec/Sans Indexation</h1>
+            
+            <div class="highlight">
+                <p>L'indexation dans MongoDB accélère considérablement les requêtes de recherche, tri et filtrage, mais nécessite un équilibre entre performance de lecture et surcharge d'écriture.</p>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Critère</th>
+                            <th>Avec Indexation</th>
+                            <th>Sans Indexation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Vitesse de requêtes</strong></td>
+                            <td>Très rapide pour requêtes filtrées</td>
+                            <td>Lente pour recherches non triviales</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Recherche efficace</strong></td>
+                            <td>Optimisée (index sur champs interrogés)</td>
+                            <td>Scan complet de la collection</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Insertion de données</strong></td>
+                            <td>Légère surcharge (MAJ index)</td>
+                            <td>Plus rapide sans surcharge</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Taille du stockage</strong></td>
+                            <td>Légèrement plus grande</td>
+                            <td>Plus petite (pas de structures supp.)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tri / Pagination</strong></td>
+                            <td>Performant si indexé</td>
+                            <td>Très lent (charge toute la collection)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Slide 8: Authentication -->
+        <div class="slide">
+            <h1>Gestion de l'Authentification</h1>
+            
+            <h2>Objectif</h2>
+            <p>Empêcher l'accès non autorisé à la base de données en activant l'authentification obligatoire.</p>
+
+            <h2>Étapes de Configuration</h2>
+            
+            <h3>1. Création d'un utilisateur administrateur</h3>
+            <div class="code-block">
+use admin
+db.createUser({
+    user: "admin",
+    pwd: "securePass123",
+    roles: [ { role: "root", db: "admin" } ]
+})
+            </div>
+
+            <h3>2. Activation dans mongod.conf</h3>
+            <div class="code-block">
+security:
+    authorization: enabled
+            </div>
+
+            <h3>3. Connexion sécurisée</h3>
+            <div class="code-block">
+mongo --username admin --password securePass123 --authenticationDatabase admin
+            </div>
+
+            <div class="highlight">
+                <p><strong>Résultat</strong> : Toutes les requêtes nécessitent désormais une authentification valide</p>
+            </div>
+        </div>
+
+        <!-- Slide 9: Performance Results -->
+        <div class="slide">
+            <h1>Avantages Observés</h1>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Critère</th>
+                            <th>Sans Sharding</th>
+                            <th>Avec Sharding</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Temps de réponse</strong></td>
+                            <td>Lent (même avec index)</td>
+                            <td>Rapide (même sans index complet)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Scalabilité</strong></td>
+                            <td>Limitée</td>
+                            <td>Horizontale, dynamique</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fiabilité (pannes)</strong></td>
+                            <td>Moyenne</td>
+                            <td>Haute (via replica sets)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gestion pics de charge</strong></td>
+                            <td>Difficile</td>
+                            <td>Optimisée par le routeur</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Requêtes métier spécifiques</strong></td>
+                            <td>Longues</td>
+                            <td>Fluides même sur gros volumes</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">⚡</span>
+                    <p>Performance améliorée</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">🔒</span>
+                    <p>Sécurité renforcée</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">📈</span>
+                    <p>Scalabilité horizontale</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Conclusion -->
+        <div class="slide">
+            <h1>Conclusion</h1>
+            
+            <div class="highlight">
+                <h2>Résultats Obtenus</h2>
+                <p>L'architecture sharded avec MongoDB a permis de créer un système <strong>fiable, évolutif et performant</strong> pour la ville de Pikine.</p>
+            </div>
+
+            <h2>Bénéfices Clés</h2>
+            <ul>
+                <li><strong>Sécurisation</strong> : Gestion de l'authentification pour protéger les données sensibles</li>
+                <li><strong>Performance</strong> : Répartition équilibrée des données et requêtes</li>
+                <li><strong>Évolutivité</strong> : Architecture scalable horizontalement</li>
+                <li><strong>Fiabilité</strong> : Haute disponibilité via replica sets</li>
+            </ul>
+
+            <h2>Perspectives d'Amélioration</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">💾</span>
+                    <p>Mise en cache des requêtes fréquentes</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">📊</span>
+                    <p>Monitoring avec MongoDB Atlas ou Prometheus</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">📱</span>
+                    <p>Tableau de bord pour responsables municipaux</p>
+                </div>
+            </div>
+
+            <div class="highlight" style="text-align: center; margin-top: 40px;">
+                <h3>Merci pour votre attention</h3>
+                <p>Questions et discussions bienvenues</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <button class="nav-button" id="prevBtn" onclick="changeSlide(-1)">← Précédent</button>
+        <div class="slide-counter">
+            <span id="currentSlide">1</span> / <span id="totalSlides">10</span>
+        </div>
+        <button class="nav-button" id="nextBtn" onclick="changeSlide(1)">Suivant →</button>
+    </div>
+
+    <script>
+        let currentSlideIndex = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        document.getElementById('totalSlides').textContent = totalSlides;
+
+        function showSlide(index) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[index].classList.add('active');
+            
+            document.getElementById('currentSlide').textContent = index + 1;
+            document.getElementById('prevBtn').disabled = index === 0;
+            document.getElementById('nextBtn').disabled = index === totalSlides - 1;
+        }
+
+        function changeSlide(direction) {
+            const newIndex = currentSlideIndex + direction;
+            if (newIndex >= 0 && newIndex < totalSlides) {
+                currentSlideIndex = newIndex;
+                showSlide(currentSlideIndex);
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        });
+
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>

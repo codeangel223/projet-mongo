@@ -18,7 +18,8 @@ docker exec -i shard3-1 mongosh --port 27018 < scripts/init-shard3.js
 
 docker compose up -d mongos
 sleep 5
-docker exec -i projet-mongos mongosh -u root -p root < scripts/add-shards.js 
+docker exec -i projet-mongos mongosh < scripts/add-shards.js 
+# docker exec -i projet-mongos mongosh -u root -p root < scripts/add-shards.js 
 
 
 echo "Fin de montage des instaces."

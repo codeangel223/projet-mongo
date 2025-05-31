@@ -15,7 +15,7 @@ sharding:
 
 
 security:
-  authorization: "enabled"
+  # authorization: "enabled"
   keyFile: data/db/keyFile
 
 
